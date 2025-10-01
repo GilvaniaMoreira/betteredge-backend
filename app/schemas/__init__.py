@@ -1,11 +1,13 @@
 from .user import UserCreate, UserResponse, UserLogin, Token
 from .client import ClientCreate, ClientUpdate, ClientResponse, ClientList
 from .asset import AssetCreate, AssetResponse, AssetList
+from .allocation import AllocationCreate, AllocationResponse, AllocationList
 
 __all__ = [
     "UserCreate", "UserResponse", "UserLogin", "Token",
     "ClientCreate", "ClientUpdate", "ClientResponse", "ClientList",
-    "AssetCreate", "AssetResponse", "AssetList"
+    "AssetCreate", "AssetResponse", "AssetList",
+    "AllocationCreate", "AllocationResponse", "AllocationList"
 ]
 
 
