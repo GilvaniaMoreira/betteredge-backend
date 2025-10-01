@@ -219,7 +219,19 @@ ALLOWED_ORIGINS=["http://localhost:3000", "http://frontend:3000"]
 
 ## 🚀 Deploy
 
-### Docker
+### Docker Compose (Recomendado)
+```bash
+# Iniciar todos os serviços (PostgreSQL, Redis, Backend)
+docker compose up --build -d
+
+# Ver logs
+docker compose logs -f
+
+# Parar serviços
+docker compose down
+```
+
+### Docker (Apenas Backend)
 ```bash
 # Build da imagem
 docker build -t betteredge-backend .
