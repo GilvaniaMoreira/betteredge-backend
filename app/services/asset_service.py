@@ -3,9 +3,9 @@ from sqlalchemy import select, func, and_, or_
 from app.models.asset import Asset
 from app.schemas.asset import AssetCreate
 from typing import Optional, Tuple, Dict, Any
-import asyncio
-import yfinance as yf
 from datetime import datetime
+import yfinance as yf
+import asyncio
 
 
 class AssetService:
@@ -58,56 +58,103 @@ class AssetService:
         
         return list(assets), total
 
-    async def fetch_asset_from_yahoo(self, ticker: str) -> Optional[Dict[str, Any]]:
+
+    async def search_yahoo_assets_by_name(self, query: str, limit: int = 10) -> list[Dict[str, Any]]:
+        """Buscar ativos do Yahoo Finance e retornar resultados simplificados para autocomplete"""
         try:
+            print(f"Buscando ativos com query: '{query}', limite: {limit}")
+            
+            # Usar yfinance.Search para busca flexível
             loop = asyncio.get_event_loop()
+            search_results = await loop.run_in_executor(None, self._search_yahoo_finance, query, limit)
             
-            def fetch_ticker_data():
-                ticker_obj = yf.Ticker(ticker)
-                info = ticker_obj.info
-                hist = ticker_obj.history(period="1d")
-                return info, hist
+            if not search_results:
+                return []
             
-            info, hist = await loop.run_in_executor(None, fetch_ticker_data)
+            # Processar resultados da busca - simplificado para autocomplete
+            processed_results = []
+            for quote in search_results:
+                result = {
+                    "ticker": quote.get("symbol", "").upper(),
+                    "name": quote.get("longname", quote.get("shortname", quote.get("symbol", ""))),
+                    "exchange": quote.get("exchDisp", quote.get("exchange", "Unknown"))
+                }
+                
+                processed_results.append(result)
             
-            if not info or len(info) == 0:
-                print(f"No data received for ticker: {ticker}")
+            print(f"Retornando {len(processed_results)} resultados de busca simplificados")
+            return processed_results
+            
+        except Exception as e:
+            print(f"Erro ao buscar ativos do Yahoo Finance: {e}")
+            return []
+
+    async def get_yahoo_asset_details(self, ticker: str) -> Optional[Dict[str, Any]]:
+        """Obter informações detalhadas para um ticker específico usando yfinance.Ticker"""
+        try:
+            print(f"Buscando informações detalhadas para ticker: {ticker}")
+            
+            # Usar yfinance.Ticker para informações detalhadas
+            loop = asyncio.get_event_loop()
+            ticker_data = await loop.run_in_executor(None, self._get_yahoo_ticker_info, ticker)
+            
+            if not ticker_data:
                 return None
             
-            current_price = None
-            if not hist.empty and 'Close' in hist.columns:
-                close_prices = hist['Close'].dropna()
-                if not close_prices.empty:
-                    current_price = close_prices.iloc[-1]
+            # Verificar se temos dados significativos (não apenas padrões)
+            if not ticker_data.get("longName") and not ticker_data.get("shortName"):
+                return None
             
-            return {
+            # Extrair dados detalhados
+            result = {
                 "ticker": ticker.upper(),
-                "name": info.get("longName", ticker),
-                "exchange": info.get("exchange", ""),
-                "currency": info.get("currency", "USD"),
-                "current_price": float(current_price) if current_price is not None else None,
-                "sector": info.get("sector", ""),
-                "industry": info.get("industry", ""),
-                "market_cap": info.get("marketCap"),
-                "volume": info.get("volume"),
-                "pe_ratio": info.get("trailingPE"),
-                "dividend_yield": info.get("dividendYield"),
+                "name": ticker_data.get("longName", ticker_data.get("shortName", ticker)),
+                "exchange": ticker_data.get("exchange", "Unknown"),
+                "currency": ticker_data.get("currency", "USD"),
+                "current_price": ticker_data.get("currentPrice") or ticker_data.get("regularMarketPrice"),
+                "sector": ticker_data.get("sector", ""),
+                "industry": ticker_data.get("industry", ""),
+                "market_cap": ticker_data.get("marketCap"),
+                "volume": ticker_data.get("volume") or ticker_data.get("regularMarketVolume"),
+                "pe_ratio": ticker_data.get("trailingPE"),
+                "dividend_yield": ticker_data.get("dividendYield"),
                 "last_updated": datetime.utcnow()
             }
+            
+            # Limpar valores None
+            result = {k: v for k, v in result.items() if v is not None}
+            
+            print(f"Detalhes obtidos com sucesso para {ticker}")
+            return result
+            
         except Exception as e:
-            print(f"Error fetching asset from Yahoo Finance for {ticker}: {e}")
+            print(f"Erro ao buscar detalhes do ativo Yahoo para {ticker}: {e}")
             return None
 
-    async def update_asset_from_yahoo(self, asset_id: int, yahoo_data: Dict[str, Any]) -> Asset | None:
-        asset = await self.get_asset(asset_id)
-        if not asset:
+    def _search_yahoo_finance(self, query: str, limit: int):
+        """Função síncrona para buscar no Yahoo Finance usando yfinance.Search"""
+        try:
+            # Usar yfinance.Search para busca flexível
+            search = yf.Search(query, max_results=limit)
+            search_results = search.search()
+            
+
+            # Obter cotações dos resultados da busca
+            quotes = search_results.quotes if hasattr(search_results, 'quotes') else []
+            print(f"Cotações: {quotes}")  
+            
+            return quotes[:limit] if quotes else []
+            
+        except Exception as e:
+            print(f"Erro ao buscar no Yahoo Finance para {query}: {e}")
+            return []
+
+    def _get_yahoo_ticker_info(self, ticker: str):
+        """Função síncrona para obter informações do ticker do Yahoo Finance"""
+        try:
+            ticker_obj = yf.Ticker(ticker)
+            return ticker_obj.info if ticker_obj.info else None
+        except Exception as e:
+            print(f"Erro ao obter informações do Yahoo para {ticker}: {e}")
             return None
-
-        for field, value in yahoo_data.items():
-            if hasattr(asset, field) and value is not None:
-                setattr(asset, field, value)
-
-        await self.db.commit()
-        await self.db.refresh(asset)
-        return asset
 

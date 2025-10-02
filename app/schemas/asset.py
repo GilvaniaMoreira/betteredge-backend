@@ -46,10 +46,6 @@ class AssetList(BaseModel):
     pages: int
 
 
-class AssetSearchRequest(BaseModel):
-    ticker: str
-
-
 class AssetSearchResponse(BaseModel):
     ticker: str
     name: str
@@ -63,6 +59,15 @@ class AssetSearchResponse(BaseModel):
     pe_ratio: Optional[float]
     dividend_yield: Optional[float]
     last_updated: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class AssetSearchSimpleResponse(BaseModel):
+    ticker: str
+    name: str
+    exchange: Optional[str] = None
 
     class Config:
         from_attributes = True

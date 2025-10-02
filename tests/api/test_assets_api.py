@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.api.dependencies import get_current_user
 from app.services.asset_service import AssetService
 from app.services.auth_service import AuthService
-from app.schemas.asset import AssetCreate, AssetSearchRequest
+from app.schemas.asset import AssetCreate
 from app.models.user import User
 
 
@@ -367,94 +367,6 @@ class TestAssetsIntegration:
         finally:
             self._cleanup_auth_override()
     
-    @pytest.mark.asyncio
-    async def test_search_asset_from_yahoo_integration(self, test_client, mock_db_session, mock_auth_user):
-        """Integration test: Search asset from Yahoo Finance through API"""
-        self._setup_auth_override(mock_auth_user)
-        
-        try:
-            with patch('app.api.assets.AssetService') as mock_asset_service_class:
-                mock_asset_service = AsyncMock()
-                mock_asset_service_class.return_value = mock_asset_service
-                
-                # Mock Yahoo Finance data
-                yahoo_data = AsyncMock()
-                yahoo_data.ticker = "AAPL"
-                yahoo_data.name = "Apple Inc"
-                yahoo_data.exchange = "NASDAQ"
-                yahoo_data.currency = "USD"
-                yahoo_data.current_price = 150.0
-                yahoo_data.sector = "Technology"
-                yahoo_data.industry = "Consumer Electronics"
-                yahoo_data.market_cap = 3000000000000
-                yahoo_data.volume = 1000000
-                yahoo_data.pe_ratio = 25.0
-                yahoo_data.dividend_yield = 0.5
-                
-                mock_asset_service.fetch_asset_from_yahoo.return_value = yahoo_data
-                
-                search_data = {"ticker": "AAPL"}
-                
-                response = test_client.post("/assets/search", json=search_data, headers={"Authorization": "Bearer fake_token"})
-                
-                # Verify response
-                assert response.status_code == 200
-                data = response.json()
-                assert data["ticker"] == "AAPL"
-                assert data["name"] == "Apple Inc"
-                assert data["current_price"] == 150.0
-                
-                # Verify service was called
-                mock_asset_service.fetch_asset_from_yahoo.assert_called_once_with("AAPL")
-        finally:
-            self._cleanup_auth_override()
-    
-    @pytest.mark.asyncio
-    async def test_update_asset_price_integration(self, test_client, mock_db_session, mock_auth_user):
-        """Integration test: Update asset price through API"""
-        self._setup_auth_override(mock_auth_user)
-        
-        try:
-            with patch('app.api.assets.AssetService') as mock_asset_service_class:
-                mock_asset_service = AsyncMock()
-                mock_asset_service_class.return_value = mock_asset_service
-                
-                # Mock updated asset
-                updated_asset = AsyncMock()
-                updated_asset.id = 1
-                updated_asset.name = "Apple Inc"
-                updated_asset.ticker = "AAPL"
-                updated_asset.exchange = "NASDAQ"
-                updated_asset.currency = "USD"
-                updated_asset.current_price = 155.0
-                updated_asset.sector = "Technology"
-                updated_asset.industry = "Consumer Electronics"
-                updated_asset.market_cap = 3100000000000
-                updated_asset.volume = 1000000
-                updated_asset.pe_ratio = 25.0
-                updated_asset.dividend_yield = 0.5
-                updated_asset.last_updated = "2024-01-01T00:00:00"
-                updated_asset.created_at = "2024-01-01T00:00:00"
-                
-                # Mock the service calls for update_asset_price endpoint
-                mock_asset_service.get_asset.return_value = AsyncMock(id=1, ticker="AAPL")  # Mock existing asset
-                mock_asset_service.fetch_asset_from_yahoo.return_value = AsyncMock(ticker="AAPL")  # Mock Yahoo data
-                mock_asset_service.update_asset_from_yahoo.return_value = updated_asset
-                
-                response = test_client.put("/assets/1/update-price", headers={"Authorization": "Bearer fake_token"})
-                
-                # Verify response
-                assert response.status_code == 200
-                data = response.json()
-                assert data["ticker"] == "AAPL"
-                assert data["current_price"] == 155.0
-                
-                # Verify service calls
-                mock_asset_service.get_asset.assert_called_once_with(1)
-                mock_asset_service.fetch_asset_from_yahoo.assert_called_once_with("AAPL")
-                mock_asset_service.update_asset_from_yahoo.assert_called_once()
-        finally:
-            self._cleanup_auth_override()
     
     @pytest.mark.asyncio
     async def test_asset_endpoints_unauthorized_integration(self, test_client):
@@ -466,8 +378,8 @@ class TestAssetsIntegration:
             ("GET", "/assets/"),
             ("POST", "/assets/", asset_data),
             ("GET", "/assets/1"),
-            ("POST", "/assets/search", {"ticker": "TEST"}),
-            ("PUT", "/assets/1/update-price")
+            ("GET", "/assets/yahoo/search?query=test&limit=10"),
+            ("GET", "/assets/yahoo/details/AAPL")
         ]
         
         for method, url, *data in endpoints:
@@ -481,3 +393,192 @@ class TestAssetsIntegration:
                 response = test_client.delete(url)
             
             assert response.status_code == 403  # FastAPI returns 403 for missing auth headers
+
+    @pytest.mark.asyncio
+    async def test_search_yahoo_assets_by_name_integration(self, test_client, mock_db_session, mock_auth_user):
+        """Integration test: Search Yahoo Finance assets by name through API (simplified results)"""
+        self._setup_auth_override(mock_auth_user)
+        
+        try:
+            with patch('app.api.assets.AssetService') as mock_asset_service_class:
+                mock_asset_service = AsyncMock()
+                mock_asset_service_class.return_value = mock_asset_service
+                
+                # Mock simplified search results
+                mock_search_results = [
+                    {
+                        "ticker": "AAPL",
+                        "name": "Apple Inc",
+                        "exchange": "NASDAQ"
+                    },
+                    {
+                        "ticker": "AMZN",
+                        "name": "Amazon.com Inc",
+                        "exchange": "NASDAQ"
+                    }
+                ]
+                
+                mock_asset_service.search_yahoo_assets_by_name.return_value = mock_search_results
+                
+                # Test search with query parameter
+                response = test_client.get("/assets/yahoo/search?query=apple&limit=5", headers={"Authorization": "Bearer fake_token"})
+                
+                # Verify response
+                assert response.status_code == 200
+                data = response.json()
+                assert isinstance(data, list)
+                assert len(data) == 2
+                
+                # Verify first result (simplified)
+                assert data[0]["ticker"] == "AAPL"
+                assert data[0]["name"] == "Apple Inc"
+                assert data[0]["exchange"] == "NASDAQ"
+                
+                # Verify second result (simplified)
+                assert data[1]["ticker"] == "AMZN"
+                assert data[1]["name"] == "Amazon.com Inc"
+                assert data[1]["exchange"] == "NASDAQ"
+                
+                # Verify service was called with correct parameters
+                mock_asset_service.search_yahoo_assets_by_name.assert_called_once_with("apple", 5)
+        finally:
+            self._cleanup_auth_override()
+
+    @pytest.mark.asyncio
+    async def test_search_yahoo_assets_empty_results_integration(self, test_client, mock_db_session, mock_auth_user):
+        """Integration test: Search Yahoo Finance assets returns empty list when no results"""
+        self._setup_auth_override(mock_auth_user)
+        
+        try:
+            with patch('app.api.assets.AssetService') as mock_asset_service_class:
+                mock_asset_service = AsyncMock()
+                mock_asset_service_class.return_value = mock_asset_service
+                
+                # Mock empty search results
+                mock_asset_service.search_yahoo_assets_by_name.return_value = []
+                
+                response = test_client.get("/assets/yahoo/search?query=nonexistent&limit=10", headers={"Authorization": "Bearer fake_token"})
+                
+                # Verify response
+                assert response.status_code == 200
+                data = response.json()
+                assert isinstance(data, list)
+                assert len(data) == 0
+                
+                # Verify service was called
+                mock_asset_service.search_yahoo_assets_by_name.assert_called_once_with("nonexistent", 10)
+        finally:
+            self._cleanup_auth_override()
+
+    @pytest.mark.asyncio
+    async def test_search_yahoo_assets_validation_integration(self, test_client, mock_db_session, mock_auth_user):
+        """Integration test: Search Yahoo Finance assets validates query parameters"""
+        self._setup_auth_override(mock_auth_user)
+        
+        try:
+            # Test with empty query (should fail validation)
+            response = test_client.get("/assets/yahoo/search?query=&limit=10", headers={"Authorization": "Bearer fake_token"})
+            assert response.status_code == 422  # Validation error
+            
+            # Test with invalid limit (should fail validation)
+            response = test_client.get("/assets/yahoo/search?query=apple&limit=0", headers={"Authorization": "Bearer fake_token"})
+            assert response.status_code == 422  # Validation error
+            
+            # Test with limit too high (should fail validation)
+            response = test_client.get("/assets/yahoo/search?query=apple&limit=25", headers={"Authorization": "Bearer fake_token"})
+            assert response.status_code == 422  # Validation error
+            
+        finally:
+            self._cleanup_auth_override()
+
+    @pytest.mark.asyncio
+    async def test_search_yahoo_assets_unauthorized_integration(self, test_client):
+        """Integration test: Search Yahoo Finance assets requires authentication"""
+        # Test without authentication
+        response = test_client.get("/assets/yahoo/search?query=apple&limit=10")
+        assert response.status_code == 403  # FastAPI returns 403 for missing auth headers
+
+    @pytest.mark.asyncio
+    async def test_get_yahoo_asset_details_integration(self, test_client, mock_db_session, mock_auth_user):
+        """Integration test: Get Yahoo Finance asset details through API"""
+        self._setup_auth_override(mock_auth_user)
+        
+        try:
+            with patch('app.api.assets.AssetService') as mock_asset_service_class:
+                mock_asset_service = AsyncMock()
+                mock_asset_service_class.return_value = mock_asset_service
+                
+                # Mock detailed asset data
+                mock_asset_details = {
+                    "ticker": "AAPL",
+                    "name": "Apple Inc",
+                    "exchange": "NASDAQ",
+                    "currency": "USD",
+                    "current_price": 150.0,
+                    "sector": "Technology",
+                    "industry": "Consumer Electronics",
+                    "market_cap": 3000000000000,
+                    "volume": 1000000,
+                    "pe_ratio": 25.0,
+                    "dividend_yield": 0.5,
+                    "last_updated": "2024-01-01T00:00:00"
+                }
+                
+                mock_asset_service.get_yahoo_asset_details.return_value = mock_asset_details
+                
+                # Test get details
+                response = test_client.get("/assets/yahoo/details/AAPL", headers={"Authorization": "Bearer fake_token"})
+                
+                # Verify response
+                assert response.status_code == 200
+                data = response.json()
+                
+                # Verify detailed result
+                assert data["ticker"] == "AAPL"
+                assert data["name"] == "Apple Inc"
+                assert data["exchange"] == "NASDAQ"
+                assert data["currency"] == "USD"
+                assert data["current_price"] == 150.0
+                assert data["sector"] == "Technology"
+                assert data["industry"] == "Consumer Electronics"
+                assert data["market_cap"] == 3000000000000
+                assert data["volume"] == 1000000
+                assert data["pe_ratio"] == 25.0
+                assert data["dividend_yield"] == 0.5
+                
+                # Verify service was called with correct parameters
+                mock_asset_service.get_yahoo_asset_details.assert_called_once_with("AAPL")
+        finally:
+            self._cleanup_auth_override()
+
+    @pytest.mark.asyncio
+    async def test_get_yahoo_asset_details_not_found_integration(self, test_client, mock_db_session, mock_auth_user):
+        """Integration test: Get Yahoo Finance asset details returns 404 when not found"""
+        self._setup_auth_override(mock_auth_user)
+        
+        try:
+            with patch('app.api.assets.AssetService') as mock_asset_service_class:
+                mock_asset_service = AsyncMock()
+                mock_asset_service_class.return_value = mock_asset_service
+                
+                # Mock no details found
+                mock_asset_service.get_yahoo_asset_details.return_value = None
+                
+                # Test get details for non-existent ticker
+                response = test_client.get("/assets/yahoo/details/INVALID", headers={"Authorization": "Bearer fake_token"})
+                
+                # Verify error response
+                assert response.status_code == 404
+                assert "Asset not found or unable to fetch details" in response.json()["detail"]
+                
+                # Verify service was called
+                mock_asset_service.get_yahoo_asset_details.assert_called_once_with("INVALID")
+        finally:
+            self._cleanup_auth_override()
+
+    @pytest.mark.asyncio
+    async def test_get_yahoo_asset_details_unauthorized_integration(self, test_client):
+        """Integration test: Get Yahoo Finance asset details requires authentication"""
+        # Test without authentication
+        response = test_client.get("/assets/yahoo/details/AAPL")
+        assert response.status_code == 403  # FastAPI returns 403 for missing auth headers

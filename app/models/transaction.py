@@ -15,7 +15,7 @@ class Transaction(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
-    type = Column(Enum(TransactionType), nullable=False)
+    type = Column(Enum('deposit', 'withdrawal', name='transactiontype'), nullable=False)
     amount = Column(Float, nullable=False)
     date = Column(DateTime, nullable=False)
     note = Column(String, nullable=True)
