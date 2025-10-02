@@ -2,6 +2,23 @@
 
 Sistema de gestão de investimentos e portfólio financeiro com API REST desenvolvido em FastAPI.
 
+## 🌐 Acesso em Produção
+
+### 🚀 Ambiente de Produção
+- **URL**: https://betteredge-backend-production.up.railway.app/
+- **Documentação da API**: https://betteredge-backend-production.up.railway.app/docs
+
+### 👤 Usuário Admin Padrão
+- **Email**: `admin@betteredge.com`
+- **Senha**: `admin123`
+
+### 🔑 Como Fazer Login
+```bash
+curl -X POST "https://betteredge-backend-production.up.railway.app/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@betteredge.com", "password": "admin123"}'
+```
+
 ## 📋 Descrição
 
 O BetterEdge Backend é uma API REST que oferece funcionalidades para:
