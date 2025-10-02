@@ -121,9 +121,6 @@ class AssetService:
                 "last_updated": datetime.utcnow()
             }
             
-            # Limpar valores None
-            result = {k: v for k, v in result.items() if v is not None}
-            
             print(f"Detalhes obtidos com sucesso para {ticker}")
             return result
             
