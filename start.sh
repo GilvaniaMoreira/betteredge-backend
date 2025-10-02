@@ -8,6 +8,10 @@ sleep 10
 echo "Executando migrações do banco de dados..."
 alembic upgrade head
 
+# Executar seed do banco de dados
+echo "Executando seed do banco de dados..."
+python seed.py
+
 # Iniciar a aplicação
 echo "Iniciando aplicação..."
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload

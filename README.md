@@ -179,6 +179,31 @@ alembic revision --autogenerate -m "descrição da migração"
 alembic downgrade -1
 ```
 
+## 🌱 Seed do Banco de Dados
+
+### Executar seed
+```bash
+# Com Docker
+docker compose exec backend python seed.py
+
+# Local (com venv ativado)
+python seed.py
+```
+
+* Já é executado no `docker compose up`
+
+### O que o seed cria:
+- **👤 Usuário Admin**: `admin@betteredge.com` (senha: `admin123`)
+- **👥 8 Clientes**: João Silva, Maria Santos, Pedro Oliveira, etc.
+- **📈 48 Ativos**: AAPL, MSFT, GOOGL, AMZN, TSLA, ETFs, Crypto, etc.
+
+### Login como Admin:
+```bash
+curl -X POST "http://localhost:8000/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@betteredge.com", "password": "admin123"}'
+```
+
 ## 🛠️ Desenvolvimento
 
 ### Estrutura do Projeto
