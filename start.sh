@@ -14,4 +14,4 @@ python seed.py
 
 # Iniciar a aplicação
 echo "Iniciando aplicação..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips="*"
