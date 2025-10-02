@@ -13,13 +13,11 @@ class TransactionService:
         self.db = db
 
     async def create_transaction(self, transaction_data: TransactionCreate) -> Transaction:
-        """Create a new transaction"""
         db_transaction = Transaction(**transaction_data.dict())
         self.db.add(db_transaction)
         await self.db.commit()
         await self.db.refresh(db_transaction)
         
-        # Load client relationship
         await self.db.refresh(
             db_transaction, 
             attribute_names=["client"]
@@ -27,7 +25,6 @@ class TransactionService:
         return db_transaction
 
     async def get_transaction(self, transaction_id: int) -> Transaction | None:
-        """Get transaction by ID"""
         result = await self.db.execute(
             select(Transaction)
             .options(selectinload(Transaction.client))
@@ -41,10 +38,8 @@ class TransactionService:
         size: int = 10, 
         filters: Optional[TransactionFilter] = None
     ) -> Tuple[List[Transaction], int]:
-        """Get transactions with pagination and filtering"""
         query = select(Transaction).options(selectinload(Transaction.client))
         
-        # Apply filters
         if filters:
             if filters.client_id:
                 query = query.where(Transaction.client_id == filters.client_id)
@@ -79,7 +74,6 @@ class TransactionService:
         return transactions, total
 
     async def update_transaction(self, transaction_id: int, transaction_data: TransactionCreate) -> Transaction | None:
-        """Update a transaction"""
         transaction = await self.get_transaction(transaction_id)
         if not transaction:
             return None
@@ -92,7 +86,6 @@ class TransactionService:
         return transaction
 
     async def delete_transaction(self, transaction_id: int) -> bool:
-        """Delete a transaction"""
         transaction = await self.get_transaction(transaction_id)
         if not transaction:
             return False
@@ -107,9 +100,7 @@ class TransactionService:
         end_date: Optional[datetime] = None,
         client_id: Optional[int] = None
     ) -> CaptationReport:
-        """Get captation report with summary and per-client breakdown"""
         
-        # Base query for transactions
         base_query = select(Transaction)
         if start_date:
             base_query = base_query.where(Transaction.date >= start_date)
@@ -217,7 +208,6 @@ class TransactionService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None
     ) -> Tuple[List[Transaction], int]:
-        """Get transactions for a specific client"""
         filters = TransactionFilter(
             client_id=client_id,
             start_date=start_date,

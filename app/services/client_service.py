@@ -11,7 +11,6 @@ class ClientService:
         self.db = db
 
     async def create_client(self, client_data: ClientCreate) -> Client:
-        """Create a new client"""
         db_client = Client(**client_data.dict())
         self.db.add(db_client)
         await self.db.commit()
@@ -19,14 +18,12 @@ class ClientService:
         return db_client
 
     async def get_client(self, client_id: int) -> Client | None:
-        """Get client by ID"""
         result = await self.db.execute(
             select(Client).where(Client.id == client_id)
         )
         return result.scalar_one_or_none()
 
     async def get_client_by_email(self, email: str) -> Client | None:
-        """Get client by email"""
         result = await self.db.execute(
             select(Client).where(Client.email == email)
         )
@@ -39,11 +36,9 @@ class ClientService:
         search: Optional[str] = None,
         is_active: Optional[bool] = None
     ) -> Tuple[list[Client], int]:
-        """Get clients with pagination, search and filter"""
         query = select(Client)
         count_query = select(func.count(Client.id))
 
-        # Apply filters
         filters = []
         if search:
             search_filter = or_(
@@ -59,11 +54,9 @@ class ClientService:
             query = query.where(and_(*filters))
             count_query = count_query.where(and_(*filters))
 
-        # Get total count
         total_result = await self.db.execute(count_query)
         total = total_result.scalar()
 
-        # Apply pagination
         query = query.offset(skip).limit(limit)
         
         result = await self.db.execute(query)
@@ -72,7 +65,6 @@ class ClientService:
         return list(clients), total
 
     async def update_client(self, client_id: int, client_data: ClientUpdate) -> Client | None:
-        """Update client"""
         client = await self.get_client(client_id)
         if not client:
             return None
@@ -86,7 +78,6 @@ class ClientService:
         return client
 
     async def delete_client(self, client_id: int) -> bool:
-        """Delete client (soft delete by setting is_active=False)"""
         client = await self.get_client(client_id)
         if not client:
             return False

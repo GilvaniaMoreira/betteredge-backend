@@ -13,7 +13,6 @@ class AssetService:
         self.db = db
 
     async def create_asset(self, asset_data: AssetCreate) -> Asset:
-        """Create a new asset"""
         db_asset = Asset(**asset_data.dict())
         self.db.add(db_asset)
         await self.db.commit()
@@ -21,14 +20,12 @@ class AssetService:
         return db_asset
 
     async def get_asset(self, asset_id: int) -> Asset | None:
-        """Get asset by ID"""
         result = await self.db.execute(
             select(Asset).where(Asset.id == asset_id)
         )
         return result.scalar_one_or_none()
 
     async def get_asset_by_ticker(self, ticker: str) -> Asset | None:
-        """Get asset by ticker"""
         result = await self.db.execute(
             select(Asset).where(Asset.ticker == ticker)
         )
@@ -40,11 +37,9 @@ class AssetService:
         limit: int = 100, 
         search: Optional[str] = None
     ) -> Tuple[list[Asset], int]:
-        """Get assets with pagination and search"""
         query = select(Asset)
         count_query = select(func.count(Asset.id))
 
-        # Apply search filter
         if search:
             search_filter = or_(
                 Asset.ticker.ilike(f"%{search}%"),
@@ -53,11 +48,9 @@ class AssetService:
             query = query.where(search_filter)
             count_query = count_query.where(search_filter)
 
-        # Get total count
         total_result = await self.db.execute(count_query)
         total = total_result.scalar()
 
-        # Apply pagination
         query = query.offset(skip).limit(limit)
         
         result = await self.db.execute(query)
@@ -66,9 +59,7 @@ class AssetService:
         return list(assets), total
 
     async def fetch_asset_from_yahoo(self, ticker: str) -> Optional[Dict[str, Any]]:
-        """Fetch asset data from Yahoo Finance API using yfinance"""
         try:
-            # Run yfinance in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
             
             def fetch_ticker_data():
@@ -79,12 +70,10 @@ class AssetService:
             
             info, hist = await loop.run_in_executor(None, fetch_ticker_data)
             
-            # Check if we got valid data
             if not info or len(info) == 0:
                 print(f"No data received for ticker: {ticker}")
                 return None
             
-            # Get current price
             current_price = None
             if not hist.empty and 'Close' in hist.columns:
                 close_prices = hist['Close'].dropna()
@@ -110,12 +99,10 @@ class AssetService:
             return None
 
     async def update_asset_from_yahoo(self, asset_id: int, yahoo_data: Dict[str, Any]) -> Asset | None:
-        """Update existing asset with Yahoo Finance data"""
         asset = await self.get_asset(asset_id)
         if not asset:
             return None
 
-        # Update asset fields
         for field, value in yahoo_data.items():
             if hasattr(asset, field) and value is not None:
                 setattr(asset, field, value)

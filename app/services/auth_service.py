@@ -12,7 +12,6 @@ class AuthService:
         self.db = db
 
     async def create_user(self, user_data: UserCreate) -> User:
-        """Create a new user"""
         try:
             hashed_password = get_password_hash(user_data.password)
             db_user = User(
@@ -30,18 +29,15 @@ class AuthService:
             raise e
 
     async def get_user_by_email(self, email: str) -> User | None:
-        """Get user by email"""
         result = await self.db.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
     async def authenticate_user(self, user_data: UserLogin) -> User | None:
-        """Authenticate user with email and password"""
         try:
             user = await self.get_user_by_email(user_data.email)
             if not user:
                 return None
             
-            # Handle password verification with error handling
             try:
                 if not verify_password(user_data.password, user.password):
                     return None
@@ -55,7 +51,6 @@ class AuthService:
             return None
 
     async def create_access_token(self, user: User) -> str:
-        """Create access token for user"""
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
         access_token = create_access_token(
             data={"sub": str(user.id), "email": user.email},

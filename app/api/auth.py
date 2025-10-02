@@ -14,10 +14,8 @@ async def register(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db)
 ):
-    """Register a new user"""
     auth_service = AuthService(db)
     
-    # Check if user already exists
     existing_user = await auth_service.get_user_by_email(user_data.email)
     if existing_user:
         raise HTTPException(
@@ -25,7 +23,6 @@ async def register(
             detail="Email already registered"
         )
     
-    # Create user
     user = await auth_service.create_user(user_data)
     return user
 
@@ -35,10 +32,8 @@ async def login(
     user_data: UserLogin,
     db: AsyncSession = Depends(get_db)
 ):
-    """Login user and return access token"""
     auth_service = AuthService(db)
     
-    # Authenticate user
     user = await auth_service.authenticate_user(user_data)
     if not user:
         raise HTTPException(
@@ -52,7 +47,6 @@ async def login(
             detail="Inactive user"
         )
     
-    # Create access token
     access_token = await auth_service.create_access_token(user)
     
     return {

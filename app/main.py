@@ -11,7 +11,6 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -21,7 +20,6 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Include routers
 app.include_router(auth_router)
 app.include_router(clients_router)
 app.include_router(assets_router)

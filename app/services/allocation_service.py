@@ -15,7 +15,6 @@ class AllocationService:
         self.db = db
 
     async def create_allocation(self, allocation_data: AllocationCreate) -> Allocation:
-        """Create a new allocation"""
         db_allocation = Allocation(**allocation_data.dict())
         self.db.add(db_allocation)
         await self.db.commit()
@@ -30,7 +29,6 @@ class AllocationService:
         return result.scalar_one()
 
     async def get_allocation(self, allocation_id: int) -> Allocation | None:
-        """Get allocation by ID"""
         result = await self.db.execute(
             select(Allocation)
             .options(selectinload(Allocation.client), selectinload(Allocation.asset))
@@ -44,7 +42,6 @@ class AllocationService:
         limit: int = 100, 
         client_id: Optional[int] = None
     ) -> Tuple[list[Allocation], int]:
-        """Get allocations with pagination and optional client filter"""
         query = select(Allocation).options(
             selectinload(Allocation.client), 
             selectinload(Allocation.asset)
@@ -56,7 +53,6 @@ class AllocationService:
             query = query.where(Allocation.client_id == client_id)
             count_query = count_query.where(Allocation.client_id == client_id)
 
-        # Get total count
         total_result = await self.db.execute(count_query)
         total = total_result.scalar()
 
@@ -69,7 +65,6 @@ class AllocationService:
         return list(allocations), total
 
     async def get_client_allocations(self, client_id: int) -> list[Allocation]:
-        """Get all allocations for a specific client"""
         result = await self.db.execute(
             select(Allocation)
             .options(selectinload(Allocation.asset))
@@ -78,7 +73,6 @@ class AllocationService:
         return list(result.scalars().all())
 
     async def get_total_allocation_value(self, client_id: Optional[int] = None) -> float:
-        """Get total allocation value for all clients or specific client"""
         query = select(func.sum(Allocation.quantity * Allocation.buy_price))
         
         if client_id:
@@ -89,8 +83,6 @@ class AllocationService:
         return total or 0.0
 
     async def update_allocation(self, allocation_id: int, allocation_data: AllocationCreate) -> Allocation:
-        """Update an existing allocation"""
-        # Get existing allocation
         existing_allocation = await self.get_allocation(allocation_id)
         if not existing_allocation:
             raise ValueError("Allocation not found")
@@ -110,8 +102,6 @@ class AllocationService:
         return existing_allocation
 
     async def delete_allocation(self, allocation_id: int) -> None:
-        """Delete an allocation"""
-        # Get existing allocation
         existing_allocation = await self.get_allocation(allocation_id)
         if not existing_allocation:
             raise ValueError("Allocation not found")
