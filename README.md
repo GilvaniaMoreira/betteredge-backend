@@ -2,24 +2,24 @@
 
 Sistema de gestão de investimentos e portfólio financeiro com API REST desenvolvido em FastAPI.
 
-## 🌐 Acesso em Produção
+## Acesso em Produção
 
-### 🚀 Ambiente de Produção
+### Ambiente de Produção
 - **URL**: https://betteredge-backend-production.up.railway.app/
 - **Documentação da API**: https://betteredge-backend-production.up.railway.app/docs
 
-### 👤 Usuário Admin Padrão
+### Usuário Admin Padrão
 - **Email**: `admin@betteredge.com`
 - **Senha**: `admin123`
 
-### 🔑 Como Fazer Login
+### Como Fazer Login
 ```bash
 curl -X POST "https://betteredge-backend-production.up.railway.app/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email": "admin@betteredge.com", "password": "admin123"}'
 ```
 
-## 📋 Descrição
+## Descrição
 
 O BetterEdge Backend é uma API REST que oferece funcionalidades para:
 - **Autenticação de usuários** com JWT
@@ -28,7 +28,7 @@ O BetterEdge Backend é uma API REST que oferece funcionalidades para:
 - **Alocações de portfólio** por cliente
 - **Transações financeiras** (depósitos, saques)
 
-## 🚀 Setup do Ambiente
+## Setup do Ambiente
 
 ### Pré-requisitos
 - Python 3.10+
@@ -77,7 +77,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 O servidor estará rodando em: http://localhost:8000
 
-## 📚 Documentação da API
+## Documentação da API
 
 ### Documentação Interativa (Swagger UI)
 Acesse: http://localhost:8000/docs
@@ -118,7 +118,7 @@ Acesse: http://localhost:8000/redoc
 - `POST /transactions/` - Criar transação
 - `GET /transactions/{id}` - Obter transação por ID
 
-## 🧪 Testes
+## Testes
 
 ### Estrutura dos Testes
 
@@ -180,7 +180,7 @@ pytest --cov=app tests/
 
 Para mais detalhes sobre os testes, consulte: [tests/README.md](tests/README.md)
 
-## 🗄️ Banco de Dados
+## Banco de Dados
 
 O projeto usa PostgreSQL e Alembic para migrações.
 
@@ -196,7 +196,7 @@ alembic revision --autogenerate -m "descrição da migração"
 alembic downgrade -1
 ```
 
-## 🌱 Seed do Banco de Dados
+## Seed do Banco de Dados
 
 ### Executar seed
 ```bash
@@ -210,9 +210,9 @@ python seed.py
 * Já é executado no `docker compose up`
 
 ### O que o seed cria:
-- **👤 Usuário Admin**: `admin@betteredge.com` (senha: `admin123`)
-- **👥 8 Clientes**: João Silva, Maria Santos, Pedro Oliveira, etc.
-- **📈 48 Ativos**: AAPL, MSFT, GOOGL, AMZN, TSLA, ETFs, Crypto, etc.
+- **Usuário Admin**: `admin@betteredge.com` (senha: `admin123`)
+- **8 Clientes**: João Silva, Maria Santos, Pedro Oliveira, etc.
+- **48 Ativos**: AAPL, MSFT, GOOGL, AMZN, TSLA, ETFs, Crypto, etc.
 
 ### Login como Admin:
 ```bash
@@ -221,7 +221,7 @@ curl -X POST "http://localhost:8000/auth/login" \
   -d '{"email": "admin@betteredge.com", "password": "admin123"}'
 ```
 
-## 🛠️ Desenvolvimento
+## Desenvolvimento
 
 ### Estrutura do Projeto
 ```
@@ -245,7 +245,7 @@ tests/                    # Testes
 - **JWT** para autenticação
 - **Pytest** para testes
 
-## 📝 Variáveis de Ambiente
+## Variáveis de Ambiente
 
 Principais variáveis no arquivo `.env`:
 
@@ -259,7 +259,7 @@ YAHOO_FINANCE_BASE_URL=https://query1.finance.yahoo.com/v8/finance/chart
 ALLOWED_ORIGINS=["http://localhost:3000", "http://frontend:3000"]
 ```
 
-## 🚀 Deploy
+## Deploy
 
 ### Docker Compose (Recomendado)
 ```bash
@@ -288,7 +288,7 @@ docker run -p 8000:8000 betteredge-backend
 3. Configure um servidor Redis
 4. Use um servidor WSGI como Gunicorn
 
-## 📞 Suporte
+## Suporte
 
 Para dúvidas ou problemas:
 1. Verifique a documentação da API em `/docs`
