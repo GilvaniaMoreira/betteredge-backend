@@ -9,6 +9,7 @@ Sistema de gestão de investimentos e portfólio financeiro com API REST desenvo
 - **Documentação da API**: https://betteredge-backend-production.up.railway.app/docs
 
 ### Usuário Admin Padrão
+> ⚠️ **Ambiente de demonstração** — estas credenciais existem apenas para fins de avaliação do portfólio.
 - **Email**: `admin@betteredge.com`
 - **Senha**: `admin123`
 
